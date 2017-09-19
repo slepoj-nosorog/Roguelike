@@ -35,23 +35,29 @@ Class Level{
     }
 }
 
+Class Player{
+    
+    [char]$char = "@"
+    [int]$x
+    [int]$y
+
+    Player([int]$x,[int]$y,[char]$char){
+
+        $this.char = $char
+        $this.x = $x
+        $this.y = $y
+
+    }
+
+}
+
+
 $width = 20
 $height = 20
 
 $map = [Level]::new($width,$height,'`')
+$player = [Player]::new(3,3, "@") 
 
-function newPlayer()
-{
-	$player = New-Object PSObject
-	$player | Add-Member -type Noteproperty -Name x -Value 3
-	$player | Add-Member -type Noteproperty -Name y -Value 3
-	$player | Add-Member -type Noteproperty -Name char -Value "@"
-
-	return $player
-}
-
-#create the player object
-$player = newPlayer
 
 # main loop
 do
