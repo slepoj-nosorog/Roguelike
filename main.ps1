@@ -38,17 +38,24 @@ Class Level{
 Class Player{
     
     [char]$char = "@"
-    [int]$x
-    [int]$y
+    [Hashtable]$pos = @{ x = 0; y = 0}
 
     Player([int]$x,[int]$y,[char]$char){
 
+        $this.pos['x'] = $x
+        $this.pos['y'] = $y
         $this.char = $char
-        $this.x = $x
-        $this.y = $y
 
     }
 
+    Move([string]$key){
+        
+        if ($key -eq "RightArrow"){ $this.pos.x ++ }
+        if ($key -eq "LeftArrow") { $this.pos.x -- }
+	    if ($key -eq "DownArrow") { $this.pos.y ++ }
+	    if ($key -eq "UpArrow")   { $this.pos.y -- }
+
+    }
 }
 
 
@@ -70,12 +77,9 @@ do
 			writetext $i $j $map.Write($i,$j)
 		}
 	}
-	writetext $player.x $player.y $player.char
+	writetext $player.pos.x $player.pos.y $player.char
 
 	$input = [Console]::ReadKey(("NoEcho"))
-	if ($input.key -eq "RightArrow"){ $player.x = $player.x + 1 }
-	if ($input.key -eq "LeftArrow"){ $player.x = $player.x - 1 }
-	if ($input.key -eq "DownArrow"){ $player.y = $player.y + 1 }
-	if ($input.key -eq "UpArrow"){ $player.y = $player.y - 1 }
-} while ($input.keychar -ne "q")
+    $player.Move( $input.key )
 
+} while ($input.keychar -ne "q")
