@@ -1,49 +1,63 @@
-if ($(Get-Host).Name.Contains("ISE"))
-{
-Write-Host "Switching to non-ISE PowerShell" -foregroundcolor "magenta"
-start-process PowerShell.exe -argument $MyInvocation.MyCommand.Definition
-Return
+if ($(Get-Host).Name.Contains("ISE")){
+
+    start-process PowerShell.exe -argument $MyInvocation.MyCommand.Definition
+    Return
+
 }
 
-Function writetext
-{
-  Param ([int]$x, [int]$y, [string]$text)
+Function writetext($x, $y , $symbol){
 	
 	[Console]::SetCursorPosition($x, $y)
-	[Console]::Write($text)
+	[Console]::Write($symbol)
     [Console]::CursorVisible = $false
+
 }
 
-# set background color of the shell to black
-#(Get-Host).UI.RawUI.BackgroundColor = "black"
-clear
+Class Level{
+    
+    [System.Array]$map
 
-# player objects factory function
-function newPlayer()
-{
-	$player = New-Object PSObject
-	$player | Add-Member -type Noteproperty -Name x -Value 3
-	$player | Add-Member -type Noteproperty -Name y -Value 3
-	$player | Add-Member -type Noteproperty -Name char1 -Value "@"
+    # Class constructor
+    Level ([int]$width, [int]$height, [char]$char){
 
-	return $player
+        $this.map = New-Object "object[,]" $width,$height
+
+        for ($x = 0; $x -lt $width; $x++) {
+            for ($y = 0; $y -lt $height; $y++) {
+                $this.map[$x,$y] = $char
+            }
+        }
+    }
+
+    #method
+    [char]Write([int]$x,[int]$y){
+        Return $this.map[$x,$y]
+    }
 }
 
-#create the player object
-$player = newPlayer
+Class Player{
+    
+    [char]$char = "@"
+    [int]$x
+    [int]$y
 
-#create the map
+    Player([int]$x,[int]$y,[char]$char){
+
+        $this.char = $char
+        $this.x = $x
+        $this.y = $y
+
+    }
+
+}
+
+
 $width = 20
 $height = 20
-$map = new-Object 'object[,]' $width, $height
 
-for($i=1; $i -le $width-1; $i++)
-{	
- 	for($j=1; $j -le $height-1; $j++)
-	{
-		$map[$i,$j] = Get-Random " ", "."
-	}
-}
+$map = [Level]::new($width,$height,'`')
+$player = [Player]::new(3,3, "@") 
+
 
 # main loop
 do
@@ -53,10 +67,10 @@ do
 	{
 		for($j=1; $j -le $height-1; $j++)
 		{
-			writetext $i $j $map[$i,$j]
+			writetext $i $j $map.Write($i,$j)
 		}
 	}
-	writetext $player.x $player.y $player.char1
+	writetext $player.x $player.y $player.char
 
 	$input = [Console]::ReadKey(("NoEcho"))
 	if ($input.key -eq "RightArrow"){ $player.x = $player.x + 1 }
