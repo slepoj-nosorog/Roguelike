@@ -26,49 +26,60 @@ function pixel(){
 Class Level{
 
     [System.Array]$map
-    [Hashtable]$size = @{ width = 0; height = 0}
-    [char]$wall = 0x2591
-    [char]$door = 0x2588
 
-    # Class constructor
-    Level ([int]$width, [int]$height, [char]$symbol){
+    Level([int]$width, [int]$height){
+        $this.map = New-Object "object[][]" $width,$height
+        for ($x = 0; $x -lt $this.map.Count; $x++) {
+            for ($y = 0; $y -lt $this.map[$x].Count; $y++) {
 
-        $this.size.width = $width
-        $this.size.height = $height
+                $this.map[$x][$y] = [Ground]::new()
 
-        $this.map = New-Object "object[,]" $width,$height
-
-        for ($x = 0; $x -lt $width; $x++) {
-            for ($y = 0; $y -lt $height; $y++) {
-                
-                if($x -eq 0 -or $x -eq $height -1 ){
-                    $char = $this.wall
+                if( $x -eq 0 -or $y -eq 0 ){ 
+                    $this.map[$x][$y] = [Wall]::new()
                 }
-                elseif($y -eq 0 -or $y -eq $height -1 ){
-                    $char = $this.wall
+                if( $x -eq $this.map.Count -1 -or $y -eq $this.map[$x].Count -1 ){ 
+                    $this.map[$x][$y] = [Wall]::new()
                 }
-                elseif($x -eq 5 -and $y -eq 0 ){
-                    $char = $this.door
-                }
-                else{
-                    $char = $symbol
-                }
-
-                $this.map[$x,$y] = $char
             }
         }
     }
 
-    #method
     Show(){
-        for ($x = 0; $x -lt $this.size.width; $x++) {
-            for ($y = 0; $y -lt $this.size.height; $y++) {
-                
+        for ($x = 0; $x -lt $this.map.Count ; $x++) {
+            for ($y = 0; $y -lt $this.map[$x].Count; $y++) {
                 [Console]::SetCursorPosition($x, $y)
-                [Console]::Write( ($this.map[$x,$y]) )
-
+                $object = $this.map[$x][$y]
+                $object.Show()
             }
         }
+    }
+}
+
+Class Ground{
+    [char]$char = "."
+
+    Show(){
+        [Console]::ForegroundColor = "DarkGray"
+	    [Console]::Write($this.char)
+    }
+}
+
+Class Wall{
+    [char]$char = "#"
+
+    Show(){
+        [Console]::ForegroundColor = "Gray"
+	    [Console]::Write($this.char)
+    }
+}
+
+Class Exit{
+
+    [char]$char = "D"
+    
+    Show(){
+        [Console]::ForegroundColor = "Red"
+	    [Console]::Write($this.char)
     }
 }
 
@@ -78,43 +89,71 @@ Class Player{
     [Hashtable]$pos = @{ x = 0; y = 0}
 
     Player([int]$x,[int]$y,[char]$char){
-
         $this.pos.x = $x
         $this.pos.y = $y
         $this.char = $char
-
     }
 
     Show(){
-
         [Console]::SetCursorPosition($this.pos.x, $this.pos.y)
+        [Console]::ForegroundColor = "Cyan"
 	    [Console]::Write($this.char)
-
     }
 
-    Move($key){
+    MoveRight(){ $this.pos.x ++ }
+    MoveLeft() { $this.pos.x -- }
+    MoveDown() { $this.pos.y ++ }
+    MoveUP()   { $this.pos.y -- }   
+}
 
-        if ($key -eq "RightArrow"){ $this.pos.x ++ }
-        if ($key -eq "LeftArrow") { $this.pos.x -- }
-        if ($key -eq "DownArrow") { $this.pos.y ++ }
-        if ($key -eq "UpArrow")   { $this.pos.y -- }
+function LevelGenerator(){
+    
+    $L = [Level]::new(20,20)
+    $L.map[5][0] = [Exit]::new()
+    $step = 2
 
+    for ($x = $step; $x -lt $L.map[$x].Count - $step; $x++) {
+            for ($y = $step; $y -lt $L.map[$x].Count - $step; $y++) {
+
+                $rnd = Get-Random -InputObject (0..10)
+                if( $rnd -eq 0){
+                    
+                    $L.map[$x][$y] = [Exit]::new()
+                }
+            }
+    }
+    Return $L
+}
+
+function PlayerMovement($key){
+    
+    $PPX = $player.pos.x
+    $PPY = $player.pos.y
+
+    if ($key -eq "RightArrow"){ 
+        if($level.map[$PPX +1][$PPY].char -eq "."){$player.MoveRight()}
+    }
+    if ($key -eq "LeftArrow"){ 
+        if($level.map[$PPX -1][$PPY].char -eq "."){$player.MoveLeft()}
+    }
+    if ($key -eq "DownArrow"){ 
+        if($level.map[$PPX][$PPY +1].char -eq "."){$player.MoveDown()}
+    }
+    if ($key -eq "UpArrow"){ 
+        if($level.map[$PPX][$PPY -1].char -eq "."){$player.MoveUP()}
     }
 }
 
-$level = [Level]::new(20,20,'.')
-$player = [Player]::new(3,3, "@")
+$level = LevelGenerator
+$player = [Player]::new(1,1, "@")
 
-# main loop
-do{
-
+do{ # main loop
+    [Console]::BackgroundColor = "DarkBlue"
     [Console]::Clear()
-    pixel
+    [Console]::BackgroundColor = "Black"
 
     $level.Show()
     $player.Show()
-    
     $input = [Console]::ReadKey(("NoEcho"))
-    $player.Move($input.key)
-
+    PlayerMovement($input.key)
 }while ( $input.keychar -ne "q" )
